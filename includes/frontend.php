@@ -64,6 +64,24 @@ add_filter( 'wp_sitemaps_posts_query_args', function ( $args, $post_type ) {
 	return $args;
 }, 10, 2 );
 
+/* Interne items ook uit de sitemaps van Rank Math en Yoast houden. */
+$hsv_sitemap_exclude = function ( $url, $type, $object ) {
+	if ( 'post' === $type && $object instanceof WP_Post && 'hsv_wedstrijd' === $object->post_type && '1' === get_post_meta( $object->ID, '_hsv_intern', true ) ) {
+		return false;
+	}
+	return $url;
+};
+add_filter( 'rank_math/sitemap/entry', $hsv_sitemap_exclude, 10, 3 );
+add_filter( 'wpseo_sitemap_entry', $hsv_sitemap_exclude, 10, 3 );
+
+/* Startlijsten niet indexeren (Rank Math / Yoast / WordPress). */
+add_filter( 'wp_robots', function ( $robots ) {
+	if ( is_singular( 'hsv_startlijst' ) ) {
+		$robots['noindex'] = true;
+	}
+	return $robots;
+} );
+
 add_filter( 'wp_sitemaps_taxonomies', function ( $taxonomies ) {
 	unset( $taxonomies['hsv_locatie'] );
 	return $taxonomies;
