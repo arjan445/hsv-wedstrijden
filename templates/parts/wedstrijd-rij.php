@@ -11,7 +11,7 @@ if ( ! $e ) {
 }
 $has_results = (bool) hsv_get_lists( $e['id'], 'hsv_uitslag' );
 $has_start   = (bool) hsv_get_lists( $e['id'], 'hsv_startlijst' );
-$meta        = array_filter( array( $e['voor'], $e['time'], $e['location'] ) );
+$meta        = array_filter( array( $e['time_label'], $e['voor'], $e['location'] ) );
 ?>
 <article class="hsv-row<?php echo $e['past'] ? ' is-past' : ''; ?>">
 	<a class="hsv-date" href="<?php echo esc_url( $e['url'] ); ?>" style="background:<?php echo esc_attr( $e['color'] ); ?>;color:<?php echo esc_attr( hsv_contrast( $e['color'] ) ); ?>" tabindex="-1" aria-hidden="true">
@@ -25,7 +25,10 @@ $meta        = array_filter( array( $e['voor'], $e['time'], $e['location'] ) );
 			<?php echo esc_html( hsv_date_label( $e ) ); ?>
 			<?php if ( $meta ) : ?> · <?php echo esc_html( implode( ' · ', $meta ) ); ?><?php endif; ?>
 		</div>
-		<?php if ( $e['now'] ) : ?><div class="hsv-status is-now">Nu bezig</div><?php elseif ( $e['open'] ) : ?><div class="hsv-status is-open">Inschrijving open<?php echo $e['deadline'] ? ' tot ' . esc_html( hsv_date( $e['deadline'], 'j F' ) ) : ''; ?></div><?php elseif ( ! $e['past'] && $e['closed'] ) : ?><div class="hsv-status">Inschrijving gesloten</div><?php endif; ?>
+		<?php if ( $e['locaties'] ) : ?>
+			<div class="hsv-locs"><?php foreach ( $e['locaties'] as $l ) : ?><span class="hsv-loc"><?php echo esc_html( $l->name ); ?></span><?php endforeach; ?></div>
+		<?php endif; ?>
+		<?php if ( $e['now'] && $e['is_wedstrijd'] ) : ?><div class="hsv-status is-now">Nu bezig</div><?php elseif ( $e['open'] ) : ?><div class="hsv-status is-open">Inschrijving open<?php echo $e['deadline'] ? ' tot ' . esc_html( hsv_date( $e['deadline'], 'j F' ) ) : ''; ?></div><?php elseif ( ! $e['past'] && $e['closed'] ) : ?><div class="hsv-status">Inschrijving gesloten</div><?php endif; ?>
 	</div>
 	<div class="hsv-row-actions">
 		<?php if ( $e['now'] && $e['live'] ) : ?>

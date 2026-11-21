@@ -47,6 +47,28 @@ add_filter( 'pre_handle_404', function ( $handled, $q ) {
 	return $handled;
 }, 10, 2 );
 
+/* Interne agenda-items (bijv. bestuursvergadering) zijn niet openbaar te bekijken. */
+add_action( 'template_redirect', function () {
+	if ( is_singular( 'hsv_wedstrijd' ) && '1' === get_post_meta( get_queried_object_id(), '_hsv_intern', true ) && ! current_user_can( 'edit_posts' ) ) {
+		global $wp_query;
+		$wp_query->set_404();
+		status_header( 404 );
+		nocache_headers();
+	}
+}, 5 );
+
+add_filter( 'wp_sitemaps_posts_query_args', function ( $args, $post_type ) {
+	if ( 'hsv_wedstrijd' === $post_type ) {
+		$args['meta_query'] = array( hsv_public_meta_query() );
+	}
+	return $args;
+}, 10, 2 );
+
+add_filter( 'wp_sitemaps_taxonomies', function ( $taxonomies ) {
+	unset( $taxonomies['hsv_locatie'] );
+	return $taxonomies;
+} );
+
 add_action( 'wp_enqueue_scripts', function () {
 	wp_enqueue_style( 'hsv-wedstrijden', HSV_URL . 'assets/hsv.css', array(), HSV_VERSION );
 } );
@@ -79,12 +101,18 @@ add_action( 'wp_head', function () {
 
 /* ------------------------------------------------------------------
  * Shortcodes
- * [hsv_agenda aantal="5" discipline="springen" soort="knhs-wedstrijd"]
+ * [hsv_agenda aantal="5" discipline="springen" soort="knhs-wedstrijd" locatie="grote-hal" wedstrijden="ja"]
  * [hsv_uitslagen aantal="3"]   laatste wedstrijden met uitslag
  * ---------------------------------------------------------------- */
 add_shortcode( 'hsv_agenda', function ( $atts ) {
-	$a = shortcode_atts( array( 'aantal' => 5, 'discipline' => '', 'soort' => '' ), $atts );
-	$posts = hsv_get_wedstrijden( array( 'limit' => (int) $a['aantal'], 'discipline' => sanitize_title( $a['discipline'] ), 'soort' => sanitize_title( $a['soort'] ) ) );
+	$a = shortcode_atts( array( 'aantal' => 5, 'discipline' => '', 'soort' => '', 'locatie' => '', 'wedstrijden' => 'nee' ), $atts );
+	$posts = hsv_get_wedstrijden( array(
+		'limit'            => (int) $a['aantal'],
+		'discipline'       => sanitize_title( $a['discipline'] ),
+		'soort'            => sanitize_title( $a['soort'] ),
+		'locatie'          => sanitize_title( $a['locatie'] ),
+		'only_wedstrijden' => 'ja' === $a['wedstrijden'],
+	) );
 	if ( ! $posts ) {
 		return '<div class="hsv"><p class="hsv-empty">Er staan op dit moment geen wedstrijden gepland.</p></div>';
 	}

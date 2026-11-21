@@ -23,14 +23,17 @@ while ( have_posts() ) :
 				<div>
 					<?php if ( $e['kind'] ) : ?><div class="hsv-kind"><?php echo esc_html( $e['kind'] ); ?></div><?php endif; ?>
 					<h1><?php the_title(); ?></h1>
-					<?php if ( $e['now'] ) : ?><span class="hsv-status is-now">Nu bezig</span><?php elseif ( $e['past'] ) : ?><span class="hsv-status">Afgelopen</span><?php endif; ?>
+					<?php if ( $e['intern'] ) : ?><span class="hsv-status">Intern – niet zichtbaar in de openbare agenda</span><?php elseif ( $e['now'] && $e['is_wedstrijd'] ) : ?><span class="hsv-status is-now">Nu bezig</span><?php elseif ( $e['past'] ) : ?><span class="hsv-status">Afgelopen</span><?php endif; ?>
 				</div>
 			</header>
 
 			<div class="hsv-single-grid">
 				<div class="hsv-single-main">
 					<ul class="hsv-facts">
-						<li><span class="hsv-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span><?php echo esc_html( ucfirst( hsv_date_label( $e ) ) ); ?><?php echo $e['time'] ? ' · ' . esc_html( $e['time'] ) : ''; ?></li>
+						<li><span class="hsv-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span><?php echo esc_html( ucfirst( hsv_date_label( $e ) ) ); ?><?php echo $e['time_label'] ? ' · ' . esc_html( $e['time_label'] ) : ''; ?></li>
+						<?php if ( $e['locaties'] ) : ?>
+							<li><span class="hsv-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6"/></svg></span><?php echo esc_html( hsv_locaties_label( $e ) ); ?></li>
+						<?php endif; ?>
 						<?php if ( $location ) : ?>
 							<li><span class="hsv-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></span><a href="https://www.google.com/maps/search/?api=1&amp;query=<?php echo rawurlencode( $location ); ?>" target="_blank" rel="noopener"><?php echo esc_html( $location ); ?></a></li>
 						<?php endif; ?>
@@ -49,7 +52,7 @@ while ( have_posts() ) :
 					<?php
 					hsv_template( 'parts/lijsten.php', array( 'wedstrijd' => $e['id'], 'type' => 'hsv_startlijst' ) );
 					hsv_template( 'parts/lijsten.php', array( 'wedstrijd' => $e['id'], 'type' => 'hsv_uitslag' ) );
-					if ( ! $has_any && ! $e['past'] ) {
+					if ( ! $has_any && ! $e['past'] && $e['is_wedstrijd'] ) {
 						echo '<p class="hsv-note">Startlijsten en uitslagen verschijnen hier zodra ze bekend zijn.</p>';
 					}
 					?>

@@ -3,7 +3,8 @@
  * Berichttypes, taxonomieën en velden.
  *
  * Datamodel:
- * - hsv_wedstrijd  : een evenement in de agenda (wedstrijd, training, clubactiviteit).
+ * - hsv_wedstrijd  : een agenda-item (wedstrijd, training/baanbezetting, vergadering, clubactiviteit).
+ *                    Bezet één of meer locaties (hsv_locatie). Intern = niet in de openbare agenda, wel als bezet zichtbaar.
  * - hsv_startlijst : startlijst, hoort bij één wedstrijd (_hsv_wedstrijd_id). Meerdere per wedstrijd mogelijk.
  * - hsv_uitslag    : uitslag, hoort bij één wedstrijd. Meerdere per wedstrijd mogelijk.
  */
@@ -19,16 +20,16 @@ function hsv_register_types() {
 	register_post_type( 'hsv_wedstrijd', array(
 		'labels'        => array(
 			'name'               => 'Agenda',
-			'singular_name'      => 'Wedstrijd',
-			'add_new'            => 'Nieuwe wedstrijd',
-			'add_new_item'       => 'Nieuwe wedstrijd toevoegen',
-			'edit_item'          => 'Wedstrijd bewerken',
-			'new_item'           => 'Nieuwe wedstrijd',
-			'view_item'          => 'Wedstrijd bekijken',
-			'search_items'       => 'Wedstrijden zoeken',
-			'not_found'          => 'Geen wedstrijden gevonden',
-			'not_found_in_trash' => 'Geen wedstrijden in de prullenbak',
-			'all_items'          => 'Alle wedstrijden',
+			'singular_name'      => 'Agenda-item',
+			'add_new'            => 'Nieuw agenda-item',
+			'add_new_item'       => 'Nieuw agenda-item toevoegen',
+			'edit_item'          => 'Agenda-item bewerken',
+			'new_item'           => 'Nieuw agenda-item',
+			'view_item'          => 'Agenda-item bekijken',
+			'search_items'       => 'Agenda doorzoeken',
+			'not_found'          => 'Geen agenda-items gevonden',
+			'not_found_in_trash' => 'Geen agenda-items in de prullenbak',
+			'all_items'          => 'Alle agenda-items',
 			'menu_name'          => 'Agenda',
 		),
 		'public'        => true,
@@ -83,6 +84,15 @@ function hsv_register_types() {
 		'show_in_rest'      => true,
 		'rewrite'           => array( 'slug' => 'agenda/soort', 'with_front' => false ),
 	) );
+	register_taxonomy( 'hsv_locatie', 'hsv_wedstrijd', array(
+		'labels'            => array( 'name' => 'Locaties', 'singular_name' => 'Locatie', 'add_new_item' => 'Nieuwe locatie', 'edit_item' => 'Locatie bewerken', 'menu_name' => 'Locaties' ),
+		'hierarchical'      => true,
+		'public'            => true,
+		'publicly_queryable' => false,
+		'show_admin_column' => true,
+		'show_in_rest'      => true,
+		'rewrite'           => false,
+	) );
 
 	/* Velden (ook via REST beschikbaar) */
 	$auth = function () {
@@ -99,6 +109,8 @@ function hsv_register_types() {
 	}
 	register_term_meta( 'hsv_discipline', 'hsv_kleur', array( 'type' => 'string', 'single' => true, 'show_in_rest' => true ) );
 	register_term_meta( 'hsv_soort', 'hsv_kleur', array( 'type' => 'string', 'single' => true, 'show_in_rest' => true ) );
+	register_term_meta( 'hsv_soort', 'hsv_is_wedstrijd', array( 'type' => 'string', 'single' => true, 'show_in_rest' => true ) );
+	register_term_meta( 'hsv_locatie', 'hsv_volgorde', array( 'type' => 'integer', 'single' => true, 'show_in_rest' => true ) );
 }
 
 function hsv_list_types() {
@@ -112,14 +124,17 @@ function hsv_wedstrijd_fields() {
 	return array(
 		'_hsv_start'        => array( 'label' => 'Begindatum', 'type' => 'date', 'required' => true ),
 		'_hsv_end'          => array( 'label' => 'Einddatum', 'type' => 'date', 'help' => 'Leeg laten bij één dag.' ),
-		'_hsv_time'         => array( 'label' => 'Tijd', 'type' => 'text', 'placeholder' => 'bijv. vanaf 09:00' ),
+		'_hsv_time_start'   => array( 'label' => 'Begintijd', 'type' => 'time', 'help' => 'Leeg = hele dag. Bepaalt wanneer de locatie bezet is.' ),
+		'_hsv_time_end'     => array( 'label' => 'Eindtijd', 'type' => 'time' ),
+		'_hsv_time'         => array( 'label' => 'Tijd (toelichting)', 'type' => 'text', 'placeholder' => 'bijv. vanaf 09:00, aanmelden vanaf 08:30' ),
 		'_hsv_voor'         => array( 'label' => 'Voor wie', 'type' => 'text', 'placeholder' => 'bijv. zaterdag paarden, zondag pony\'s' ),
-		'_hsv_location'     => array( 'label' => 'Locatie', 'type' => 'text', 'help' => 'Leeg = eigen accommodatie.' ),
+		'_hsv_location'     => array( 'label' => 'Externe locatie / adres', 'type' => 'text', 'help' => 'Alleen invullen als het niet op de eigen accommodatie is. Hal, parcours of kantine kies je rechts bij "Locaties".' ),
 		'_hsv_deadline'     => array( 'label' => 'Inschrijving sluit op', 'type' => 'date' ),
 		'_hsv_signup_url'   => array( 'label' => 'Inschrijflink', 'type' => 'url', 'placeholder' => 'Equicompetition, MijnKNHS, …' ),
 		'_hsv_signup_email' => array( 'label' => 'Of inschrijven per e-mail', 'type' => 'email' ),
 		'_hsv_signup_label' => array( 'label' => 'Tekst inschrijfknop', 'type' => 'text', 'placeholder' => 'bijv. Inschrijven via Equicompetition' ),
 		'_hsv_live'         => array( 'label' => 'Live uitslagen (link)', 'type' => 'url', 'help' => 'Alleen zichtbaar tijdens de wedstrijd.' ),
+		'_hsv_intern'       => array( 'label' => 'Intern', 'type' => 'checkbox', 'text' => 'Niet in de openbare agenda tonen (bijv. bestuursvergadering). De locatie wordt wel als "bezet" getoond.' ),
 	);
 }
 
@@ -127,7 +142,8 @@ function hsv_wedstrijd_fields() {
 function hsv_create_default_terms() {
 	$terms = array(
 		'hsv_discipline'       => array( 'Springen' => '#b2bf79', 'Dressuur' => '#849b6f', 'Clubactiviteit' => '#d9dfc0' ),
-		'hsv_soort'            => array( 'Oefenwedstrijd' => '', 'KNHS-wedstrijd' => '#9b9074', 'Kampioenschap' => '#9b9074', 'Training' => '' ),
+		'hsv_soort'            => array( 'Oefenwedstrijd' => '', 'KNHS-wedstrijd' => '#9b9074', 'Kampioenschap' => '#9b9074', 'Training' => '#dfe3d3', 'Vergadering' => '#e3e0d6' ),
+		'hsv_locatie'          => array( 'Grote hal' => 1, 'Buitenparcours' => 2, 'Kantine' => 3 ),
 	);
 	foreach ( $terms as $tax => $list ) {
 		foreach ( $list as $name => $value ) {
@@ -138,8 +154,15 @@ function hsv_create_default_terms() {
 			if ( is_wp_error( $t ) ) {
 				continue;
 			}
+			if ( 'hsv_locatie' === $tax ) {
+				update_term_meta( $t['term_id'], 'hsv_volgorde', $value );
+				continue;
+			}
 			if ( $value ) {
 				update_term_meta( $t['term_id'], 'hsv_kleur', $value );
+			}
+			if ( 'hsv_soort' === $tax && in_array( $name, array( 'Oefenwedstrijd', 'KNHS-wedstrijd', 'Kampioenschap' ), true ) ) {
+				update_term_meta( $t['term_id'], 'hsv_is_wedstrijd', '1' );
 			}
 		}
 	}

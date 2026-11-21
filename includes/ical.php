@@ -49,15 +49,22 @@ add_action( 'template_redirect', function () {
 		if ( ! $e || ! $e['start'] ) {
 			continue;
 		}
-		$desc = array_filter( array( $e['time'], $e['voor'], get_the_excerpt( $p ), $e['url'] ) );
+		$desc = array_filter( array( $e['time'], $e['voor'], hsv_locaties_label( $e ), get_the_excerpt( $p ), $e['url'] ) );
 		$lines[] = 'BEGIN:VEVENT';
 		$lines[] = 'UID:wedstrijd-' . $p->ID . '@' . $host;
 		$lines[] = 'DTSTAMP:' . gmdate( 'Ymd\THis\Z', strtotime( $p->post_modified_gmt . ' UTC' ) );
-		$lines[] = 'DTSTART;VALUE=DATE:' . str_replace( '-', '', $e['start'] );
-		$lines[] = 'DTEND;VALUE=DATE:' . gmdate( 'Ymd', strtotime( $e['end'] . ' 12:00:00 +1 day' ) );
+		if ( $e['all_day'] ) {
+			$lines[] = 'DTSTART;VALUE=DATE:' . str_replace( '-', '', $e['start'] );
+			$lines[] = 'DTEND;VALUE=DATE:' . gmdate( 'Ymd', strtotime( $e['end'] . ' 12:00:00 +1 day' ) );
+		} else {
+			$end_time = $e['time_end'] ? $e['time_end'] : $e['time_start'];
+			$lines[]  = 'DTSTART;TZID=Europe/Amsterdam:' . str_replace( '-', '', $e['start'] ) . 'T' . str_replace( ':', '', $e['time_start'] ) . '00';
+			$lines[]  = 'DTEND;TZID=Europe/Amsterdam:' . str_replace( '-', '', $e['end'] ) . 'T' . str_replace( ':', '', $end_time ) . '00';
+		}
 		$lines[] = 'SUMMARY:' . $esc( $e['title'] );
 		$lines[] = 'DESCRIPTION:' . $esc( implode( "\n", $desc ) );
-		$lines[] = 'LOCATION:' . $esc( $e['location'] ? $e['location'] : apply_filters( 'hsv_default_location', get_bloginfo( 'name' ) ) );
+		$loc     = $e['location'] ? $e['location'] : apply_filters( 'hsv_default_location', get_bloginfo( 'name' ) );
+		$lines[] = 'LOCATION:' . $esc( $e['locaties'] && ! $e['location'] ? hsv_locaties_label( $e ) . ', ' . $loc : $loc );
 		$lines[] = 'URL:' . $e['url'];
 		$lines[] = 'END:VEVENT';
 	}

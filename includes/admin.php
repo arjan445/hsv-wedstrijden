@@ -11,7 +11,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Metaboxen
  * ---------------------------------------------------------------- */
 add_action( 'add_meta_boxes', function () {
-	add_meta_box( 'hsv_wedstrijd_data', 'Gegevens wedstrijd', 'hsv_metabox_wedstrijd', 'hsv_wedstrijd', 'normal', 'high' );
+	add_meta_box( 'hsv_wedstrijd_data', 'Gegevens', 'hsv_metabox_wedstrijd', 'hsv_wedstrijd', 'normal', 'high' );
+	add_meta_box( 'hsv_bezetting', 'Bezetting locaties', 'hsv_metabox_bezetting', 'hsv_wedstrijd', 'side', 'high' );
 	add_meta_box( 'hsv_wedstrijd_lists', 'Startlijsten & uitslagen', 'hsv_metabox_wedstrijd_lists', 'hsv_wedstrijd', 'side', 'high' );
 	foreach ( hsv_list_types() as $type => $l ) {
 		add_meta_box( 'hsv_list_data', $l['single'], 'hsv_metabox_list', $type, 'normal', 'high' );
@@ -22,21 +23,96 @@ function hsv_metabox_wedstrijd( $post ) {
 	wp_nonce_field( 'hsv_save', 'hsv_nonce' );
 	echo '<table class="form-table hsv-form"><tbody>';
 	foreach ( hsv_wedstrijd_fields() as $key => $f ) {
+		$val  = (string) get_post_meta( $post->ID, $key, true );
+		$req  = ! empty( $f['required'] );
+		$help = ! empty( $f['help'] ) ? '<p class="description">' . esc_html( $f['help'] ) . '</p>' : '';
+		if ( 'checkbox' === $f['type'] ) {
+			$input = sprintf( '<label><input type="checkbox" id="%1$s" name="%1$s" value="1"%2$s> %3$s</label>', esc_attr( $key ), checked( $val, '1', false ), esc_html( $f['text'] ) );
+		} else {
+			$input = sprintf(
+				'<input type="%1$s" id="%2$s" name="%2$s" value="%3$s" class="%4$s" placeholder="%5$s"%6$s>',
+				esc_attr( $f['type'] ),
+				esc_attr( $key ),
+				esc_attr( $val ),
+				in_array( $f['type'], array( 'date', 'time' ), true ) ? '' : 'regular-text',
+				esc_attr( isset( $f['placeholder'] ) ? $f['placeholder'] : '' ),
+				$req ? ' required' : ''
+			);
+		}
 		printf(
-			'<tr><th scope="row"><label for="%1$s">%2$s%3$s</label></th><td><input type="%4$s" id="%1$s" name="%1$s" value="%5$s" class="regular-text" placeholder="%6$s"%7$s>%8$s</td></tr>',
+			'<tr><th scope="row"><label for="%1$s">%2$s%3$s</label></th><td>%4$s%5$s</td></tr>',
 			esc_attr( $key ),
 			esc_html( $f['label'] ),
-			! empty( $f['required'] ) ? ' <span style="color:#b32d2e">*</span>' : '',
-			esc_attr( $f['type'] ),
-			esc_attr( get_post_meta( $post->ID, $key, true ) ),
-			esc_attr( isset( $f['placeholder'] ) ? $f['placeholder'] : '' ),
-			! empty( $f['required'] ) ? ' required' : '',
-			! empty( $f['help'] ) ? '<p class="description">' . esc_html( $f['help'] ) . '</p>' : ''
+			$req ? ' <span style="color:#b32d2e">*</span>' : '',
+			$input, // phpcs:ignore
+			$help // phpcs:ignore
 		);
 	}
 	echo '</tbody></table>';
-	echo '<p class="description">Flyer: gebruik de uitgelichte afbeelding. Startlijsten en uitslagen voeg je toe via het blok rechts.</p>';
+	echo '<p class="description">Flyer: gebruik de uitgelichte afbeelding. Kies rechts de locatie(s) die bezet zijn. Startlijsten en uitslagen voeg je toe via het blok rechts.</p>';
 }
+
+function hsv_metabox_bezetting( $post ) {
+	echo '<div id="hsv-conflicts" data-post="' . (int) $post->ID . '" data-nonce="' . esc_attr( wp_create_nonce( 'hsv_conflicts' ) ) . '">';
+	echo hsv_conflicts_html( 'auto-draft' === $post->post_status ? null : hsv_wedstrijd( $post ) ); // phpcs:ignore
+	echo '</div>';
+}
+
+/** HTML voor de bezettingscontrole. */
+function hsv_conflicts_html( $e ) {
+	if ( ! $e || ! $e['start'] ) {
+		return '<p class="description">Vul een datum in en kies rechts de locatie(s); hier zie je dan of die al bezet zijn.</p>';
+	}
+	if ( ! $e['locaties'] ) {
+		return '<p class="description">Geen locatie gekozen, dus geen bezetting.</p>';
+	}
+	$c = hsv_conflicts( $e );
+	if ( ! $c ) {
+		return '<p style="color:#007017;margin:0"><span class="dashicons dashicons-yes-alt"></span> ' . esc_html( hsv_locaties_label( $e ) ) . ' is vrij op dit moment.</p>';
+	}
+	$out = '<p style="color:#b32d2e;margin:0 0 6px"><span class="dashicons dashicons-warning"></span> <strong>Let op: dubbel geboekt</strong></p><ul style="margin:0">';
+	foreach ( $c as $x ) {
+		$o    = $x['item'];
+		$out .= sprintf(
+			'<li style="margin-bottom:6px"><a href="%s">%s</a><br><small>%s · %s · %s</small></li>',
+			esc_url( get_edit_post_link( $o['id'] ) ),
+			esc_html( $o['title'] ),
+			esc_html( implode( ', ', $x['locaties'] ) ),
+			esc_html( hsv_date_label( $o, false ) ),
+			esc_html( $o['time_label'] ? $o['time_label'] : 'hele dag' )
+		);
+	}
+	return $out . '</ul>';
+}
+
+/* Live controle in de editor */
+add_action( 'wp_ajax_hsv_conflicts', function () {
+	check_ajax_referer( 'hsv_conflicts', 'nonce' );
+	$id = isset( $_POST['post'] ) ? absint( $_POST['post'] ) : 0;
+	if ( ! current_user_can( 'edit_post', $id ) ) {
+		wp_send_json_error();
+	}
+	$d     = function ( $k ) {
+		$v = isset( $_POST[ $k ] ) ? sanitize_text_field( wp_unslash( $_POST[ $k ] ) ) : ''; // phpcs:ignore
+		return $v;
+	};
+	$start = preg_match( '/^\d{4}-\d{2}-\d{2}$/', $d( 'start' ) ) ? $d( 'start' ) : '';
+	$end   = preg_match( '/^\d{4}-\d{2}-\d{2}$/', $d( 'end' ) ) ? $d( 'end' ) : '';
+	$ts    = preg_match( '/^\d{2}:\d{2}$/', $d( 'time_start' ) ) ? $d( 'time_start' ) : '';
+	$te    = preg_match( '/^\d{2}:\d{2}$/', $d( 'time_end' ) ) ? $d( 'time_end' ) : '';
+	$locs  = isset( $_POST['locaties'] ) ? array_filter( array_map( 'absint', (array) $_POST['locaties'] ) ) : array();
+	$terms = $locs ? get_terms( array( 'taxonomy' => 'hsv_locatie', 'include' => $locs, 'hide_empty' => false ) ) : array();
+	$e     = array(
+		'id'         => $id,
+		'start'      => $start,
+		'end'        => ( $end && $end >= $start ) ? $end : $start,
+		'time_start' => $ts,
+		'time_end'   => $te,
+		'all_day'    => '' === $ts,
+		'locaties'   => is_wp_error( $terms ) ? array() : $terms,
+	);
+	wp_send_json_success( array( 'html' => hsv_conflicts_html( $start ? $e : null ) ) );
+} );
 
 function hsv_metabox_wedstrijd_lists( $post ) {
 	if ( 'auto-draft' === $post->post_status ) {
@@ -150,6 +226,10 @@ add_action( 'save_post_hsv_wedstrijd', function ( $post_id ) {
 		return;
 	}
 	foreach ( hsv_wedstrijd_fields() as $key => $f ) {
+		if ( 'checkbox' === $f['type'] ) {
+			update_post_meta( $post_id, $key, empty( $_POST[ $key ] ) ? '' : '1' );
+			continue;
+		}
 		if ( ! isset( $_POST[ $key ] ) ) {
 			continue;
 		}
@@ -163,6 +243,9 @@ add_action( 'save_post_hsv_wedstrijd', function ( $post_id ) {
 				break;
 			case 'date':
 				$val = preg_match( '/^\d{4}-\d{2}-\d{2}$/', $raw ) ? $raw : '';
+				break;
+			case 'time':
+				$val = preg_match( '/^\d{2}:\d{2}$/', $raw ) ? $raw : '';
 				break;
 			default:
 				$val = sanitize_text_field( $raw );
@@ -230,7 +313,17 @@ add_filter( 'manage_hsv_wedstrijd_posts_columns', function ( $cols ) {
 } );
 add_action( 'manage_hsv_wedstrijd_posts_custom_column', function ( $col, $post_id ) {
 	if ( 'hsv_datum' === $col ) {
-		echo esc_html( hsv_date_label( hsv_wedstrijd( $post_id ), false ) );
+		$e = hsv_wedstrijd( $post_id );
+		echo esc_html( hsv_date_label( $e, false ) );
+		if ( $e['time_label'] ) {
+			echo '<br><small>' . esc_html( $e['time_label'] ) . '</small>';
+		}
+		if ( $e['intern'] ) {
+			echo '<br><span style="color:#646970">intern</span>';
+		}
+		if ( ! $e['past'] && hsv_conflicts( $e ) ) {
+			echo '<br><span style="color:#b32d2e"><span class="dashicons dashicons-warning" style="font-size:16px"></span> dubbel geboekt</span>';
+		}
 	} elseif ( 'hsv_lijsten' === $col ) {
 		echo (int) count( hsv_get_lists( $post_id, 'hsv_startlijst' ) ) . ' / ' . (int) count( hsv_get_lists( $post_id, 'hsv_uitslag' ) );
 	}
@@ -327,14 +420,47 @@ foreach ( array( 'hsv_discipline', 'hsv_soort' ) as $hsv_tax ) {
 	add_action( "edited_{$hsv_tax}", $save );
 }
 
+/* "Telt als wedstrijd" per soort, volgorde per locatie */
+add_action( 'hsv_soort_add_form_fields', function () {
+	echo '<div class="form-field"><label><input type="checkbox" name="hsv_is_wedstrijd" value="1"> Telt als wedstrijd</label><p>Wedstrijden komen op de homepage en bij de uitslagen. Trainingen en vergaderingen niet.</p></div>';
+} );
+add_action( 'hsv_soort_edit_form_fields', function ( $term ) {
+	printf( '<tr class="form-field"><th>Wedstrijd</th><td><label><input type="checkbox" name="hsv_is_wedstrijd" value="1"%s> Telt als wedstrijd</label><p class="description">Wedstrijden komen op de homepage en bij de uitslagen. Trainingen en vergaderingen niet.</p></td></tr>', checked( get_term_meta( $term->term_id, 'hsv_is_wedstrijd', true ), '1', false ) );
+} );
+$hsv_save_soort = function ( $term_id ) {
+	if ( current_user_can( 'manage_categories' ) && isset( $_POST['hsv_kleur'] ) ) { // phpcs:ignore
+		update_term_meta( $term_id, 'hsv_is_wedstrijd', empty( $_POST['hsv_is_wedstrijd'] ) ? '0' : '1' ); // phpcs:ignore
+	}
+};
+add_action( 'created_hsv_soort', $hsv_save_soort );
+add_action( 'edited_hsv_soort', $hsv_save_soort );
+
+add_action( 'hsv_locatie_add_form_fields', function () {
+	echo '<div class="form-field"><label for="hsv_volgorde">Volgorde</label><input type="number" id="hsv_volgorde" name="hsv_volgorde" value="10" min="0"><p>Volgorde in het bezettingsoverzicht (laag = bovenaan).</p></div>';
+} );
+add_action( 'hsv_locatie_edit_form_fields', function ( $term ) {
+	printf( '<tr class="form-field"><th><label for="hsv_volgorde">Volgorde</label></th><td><input type="number" id="hsv_volgorde" name="hsv_volgorde" value="%d" min="0"><p class="description">Volgorde in het bezettingsoverzicht (laag = bovenaan).</p></td></tr>', (int) get_term_meta( $term->term_id, 'hsv_volgorde', true ) );
+} );
+$hsv_save_loc = function ( $term_id ) {
+	if ( current_user_can( 'manage_categories' ) && isset( $_POST['hsv_volgorde'] ) ) { // phpcs:ignore
+		update_term_meta( $term_id, 'hsv_volgorde', absint( $_POST['hsv_volgorde'] ) ); // phpcs:ignore
+	}
+};
+add_action( 'created_hsv_locatie', $hsv_save_loc );
+add_action( 'edited_hsv_locatie', $hsv_save_loc );
+
 /* ------------------------------------------------------------------
  * Scripts
  * ---------------------------------------------------------------- */
 add_action( 'admin_enqueue_scripts', function () {
 	$screen = get_current_screen();
-	if ( ! $screen || ! array_key_exists( $screen->post_type, hsv_list_types() ) || 'post' !== $screen->base ) {
+	if ( ! $screen || 'post' !== $screen->base ) {
 		return;
 	}
-	wp_enqueue_media();
-	wp_enqueue_script( 'hsv-admin', HSV_URL . 'assets/admin.js', array( 'jquery' ), HSV_VERSION, true );
+	if ( array_key_exists( $screen->post_type, hsv_list_types() ) ) {
+		wp_enqueue_media();
+		wp_enqueue_script( 'hsv-admin', HSV_URL . 'assets/admin.js', array( 'jquery' ), HSV_VERSION, true );
+	} elseif ( 'hsv_wedstrijd' === $screen->post_type ) {
+		wp_enqueue_script( 'hsv-bezetting', HSV_URL . 'assets/bezetting.js', array( 'jquery' ), HSV_VERSION, true );
+	}
 } );

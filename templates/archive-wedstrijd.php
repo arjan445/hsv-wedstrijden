@@ -1,49 +1,76 @@
 <?php
 /**
- * Agenda: lijst of maand, filter op discipline en soort.
+ * Agenda: lijst, maand of bezetting; filter op discipline, soort en locatie.
  *
  * @package hsv-wedstrijden
  */
 
 get_header();
 $s      = hsv_agenda_state();
-$keep   = array( 'weergave' => 'maand' === $s['view'] ? 'maand' : '', 'maand' => 'maand' === $s['view'] ? $s['ym'] : '' );
+$keep   = array(
+	'weergave' => 'lijst' === $s['view'] ? '' : $s['view'],
+	'maand'    => 'maand' === $s['view'] ? $s['ym'] : '',
+);
+$filter = array( 'discipline' => $s['disc'], 'soort' => $s['soort'], 'locatie' => $s['locatie'] );
 $disc_t = get_terms( array( 'taxonomy' => 'hsv_discipline', 'hide_empty' => true ) );
 $sort_t = get_terms( array( 'taxonomy' => 'hsv_soort', 'hide_empty' => true ) );
+$loc_t  = hsv_get_locaties( true );
+
+/* Link die één filter aan/uit zet en de rest bewaart. */
+$toggle = function ( $key, $value ) use ( $keep, $filter ) {
+	$f         = $filter;
+	$f[ $key ] = ( $filter[ $key ] === $value ) ? '' : $value;
+	return hsv_agenda_url( array_merge( $keep, $f ) );
+};
 ?>
 <div class="hsv hsv-agenda">
 	<div class="hsv-wrap">
 		<header class="hsv-page-head">
 			<div>
 				<h1>Agenda</h1>
-				<p class="hsv-lead"><?php echo esc_html( apply_filters( 'hsv_agenda_intro', 'Oefen- en KNHS-wedstrijden springen en dressuur, voor paarden en pony\'s.' ) ); ?></p>
+				<p class="hsv-lead"><?php echo esc_html( apply_filters( 'hsv_agenda_intro', 'Wedstrijden, trainingen en activiteiten op onze accommodatie.' ) ); ?></p>
 			</div>
 			<a class="hsv-link-strong" href="<?php echo esc_url( hsv_ical_url() ); ?>">+ zet de agenda in je telefoon</a>
 		</header>
 
 		<div class="hsv-toolbar">
-			<nav class="hsv-filters" aria-label="Filter">
-				<a class="hsv-chip<?php echo ! $s['disc'] && ! $s['soort'] ? ' is-active' : ''; ?>" href="<?php echo hsv_agenda_url( $keep ); // phpcs:ignore ?>">Alles</a>
-				<?php foreach ( is_wp_error( $disc_t ) ? array() : $disc_t as $t ) : ?>
-					<a class="hsv-chip<?php echo $s['disc'] === $t->slug ? ' is-active' : ''; ?>" href="<?php echo hsv_agenda_url( array_merge( $keep, array( 'discipline' => $t->slug, 'soort' => $s['soort'] ) ) ); // phpcs:ignore ?>"><?php echo esc_html( $t->name ); ?></a>
-				<?php endforeach; ?>
-				<?php if ( ! is_wp_error( $sort_t ) && count( $sort_t ) > 1 ) : ?>
-					<span class="hsv-filter-sep" aria-hidden="true"></span>
-					<?php foreach ( $sort_t as $t ) : ?>
-						<a class="hsv-chip<?php echo $s['soort'] === $t->slug ? ' is-active' : ''; ?>" href="<?php echo hsv_agenda_url( array_merge( $keep, array( 'soort' => $s['soort'] === $t->slug ? '' : $t->slug, 'discipline' => $s['disc'] ) ) ); // phpcs:ignore ?>"><?php echo esc_html( $t->name ); ?></a>
+			<?php if ( 'bezetting' !== $s['view'] ) : ?>
+				<nav class="hsv-filters" aria-label="Filter">
+					<a class="hsv-chip<?php echo ! array_filter( $filter ) ? ' is-active' : ''; ?>" href="<?php echo hsv_agenda_url( $keep ); // phpcs:ignore ?>">Alles</a>
+					<?php foreach ( is_wp_error( $disc_t ) ? array() : $disc_t as $t ) : ?>
+						<a class="hsv-chip<?php echo $s['disc'] === $t->slug ? ' is-active' : ''; ?>" href="<?php echo $toggle( 'discipline', $t->slug ); // phpcs:ignore ?>"><?php echo esc_html( $t->name ); ?></a>
 					<?php endforeach; ?>
-				<?php endif; ?>
-			</nav>
+					<?php if ( ! is_wp_error( $sort_t ) && count( $sort_t ) > 1 ) : ?>
+						<span class="hsv-filter-sep" aria-hidden="true"></span>
+						<?php foreach ( $sort_t as $t ) : ?>
+							<a class="hsv-chip<?php echo $s['soort'] === $t->slug ? ' is-active' : ''; ?>" href="<?php echo $toggle( 'soort', $t->slug ); // phpcs:ignore ?>"><?php echo esc_html( $t->name ); ?></a>
+						<?php endforeach; ?>
+					<?php endif; ?>
+					<?php if ( count( $loc_t ) > 1 ) : ?>
+						<span class="hsv-filter-sep" aria-hidden="true"></span>
+						<?php foreach ( $loc_t as $t ) : ?>
+							<a class="hsv-chip is-loc<?php echo $s['locatie'] === $t->slug ? ' is-active' : ''; ?>" href="<?php echo $toggle( 'locatie', $t->slug ); // phpcs:ignore ?>"><?php echo esc_html( $t->name ); ?></a>
+						<?php endforeach; ?>
+					<?php endif; ?>
+				</nav>
+			<?php else : ?>
+				<p class="hsv-lead">Wanneer zijn de hal, het buitenparcours en de kantine bezet?</p>
+			<?php endif; ?>
 			<div class="hsv-switch" role="group" aria-label="Weergave">
-				<a class="<?php echo 'lijst' === $s['view'] ? 'is-active' : ''; ?>" href="<?php echo hsv_agenda_url( array( 'discipline' => $s['disc'], 'soort' => $s['soort'] ) ); // phpcs:ignore ?>">Lijst</a>
-				<a class="<?php echo 'maand' === $s['view'] ? 'is-active' : ''; ?>" href="<?php echo hsv_agenda_url( array( 'weergave' => 'maand', 'discipline' => $s['disc'], 'soort' => $s['soort'] ) ); // phpcs:ignore ?>">Maand</a>
+				<a class="<?php echo 'lijst' === $s['view'] ? 'is-active' : ''; ?>" href="<?php echo hsv_agenda_url( $filter ); // phpcs:ignore ?>">Lijst</a>
+				<a class="<?php echo 'maand' === $s['view'] ? 'is-active' : ''; ?>" href="<?php echo hsv_agenda_url( array_merge( array( 'weergave' => 'maand' ), $filter ) ); // phpcs:ignore ?>">Maand</a>
+				<?php if ( hsv_get_locaties() ) : ?>
+					<a class="<?php echo 'bezetting' === $s['view'] ? 'is-active' : ''; ?>" href="<?php echo hsv_agenda_url( array( 'weergave' => 'bezetting' ) ); // phpcs:ignore ?>">Bezetting</a>
+				<?php endif; ?>
 			</div>
 		</div>
 
-		<?php if ( 'maand' === $s['view'] ) : ?>
+		<?php if ( 'bezetting' === $s['view'] ) : ?>
+			<?php hsv_template( 'parts/bezetting.php', $s ); ?>
+		<?php elseif ( 'maand' === $s['view'] ) : ?>
 			<?php hsv_template( 'parts/maand.php', $s ); ?>
 		<?php else : ?>
-			<?php $hsv_items = hsv_get_wedstrijden( array( 'discipline' => $s['disc'], 'soort' => $s['soort'] ) ); ?>
+			<?php $hsv_items = hsv_get_wedstrijden( $filter ); ?>
 			<?php if ( $hsv_items ) : ?>
 				<div class="hsv-list">
 					<?php
@@ -59,7 +86,7 @@ $sort_t = get_terms( array( 'taxonomy' => 'hsv_soort', 'hide_empty' => true ) );
 					?>
 				</div>
 			<?php else : ?>
-				<p class="hsv-empty">Er staan geen wedstrijden gepland<?php echo $s['disc'] || $s['soort'] ? ' voor dit filter' : ''; ?>.</p>
+				<p class="hsv-empty">Er staat niets gepland<?php echo array_filter( $filter ) ? ' voor dit filter' : ''; ?>.</p>
 			<?php endif; ?>
 		<?php endif; ?>
 

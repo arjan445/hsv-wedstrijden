@@ -12,11 +12,11 @@ $offset = (int) gmdate( 'N', $first ) - 1;
 $prev   = gmdate( 'Y-m', strtotime( '-1 month', $first ) );
 $next   = gmdate( 'Y-m', strtotime( '+1 month', $first ) );
 $today  = hsv_today();
-$keep   = array( 'weergave' => 'maand', 'discipline' => $args['disc'], 'soort' => $args['soort'] );
+$keep   = array( 'weergave' => 'maand', 'discipline' => $args['disc'], 'soort' => $args['soort'], 'locatie' => $args['locatie'] );
 
 $by_day = array();
 $all    = array();
-foreach ( hsv_get_month_wedstrijden( $ym, $args['disc'], $args['soort'] ) as $p ) {
+foreach ( hsv_get_month_wedstrijden( $ym, $args['disc'], $args['soort'], $args['locatie'] ) as $p ) {
 	$e = hsv_wedstrijd( $p );
 	if ( ! $e['start'] ) {
 		continue;

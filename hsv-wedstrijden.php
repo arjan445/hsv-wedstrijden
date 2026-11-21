@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       HSV Wedstrijden
- * Description:       Agenda, wedstrijden, startlijsten en uitslagen voor HSV De Paardenvriend.
- * Version:           1.0.0
+ * Description:       Agenda (wedstrijden, trainingen, vergaderingen), bezetting van locaties, startlijsten en uitslagen voor HSV De Paardenvriend.
+ * Version:           1.1.0
  * Requires at least: 6.4
  * Requires PHP:      7.4
  * Author:            Bongersonline
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'HSV_VERSION', '1.0.0' );
+define( 'HSV_VERSION', '1.1.0' );
 define( 'HSV_FILE', __FILE__ );
 define( 'HSV_DIR', plugin_dir_path( __FILE__ ) );
 define( 'HSV_URL', plugin_dir_url( __FILE__ ) );
@@ -33,3 +33,19 @@ register_activation_hook( __FILE__, function () {
 } );
 
 register_deactivation_hook( __FILE__, 'flush_rewrite_rules' );
+
+/* Na een update: nieuwe standaardtermen aanmaken en permalinks verversen. */
+add_action( 'init', function () {
+	if ( get_option( 'hsv_version' ) === HSV_VERSION ) {
+		return;
+	}
+	hsv_create_default_terms();
+	foreach ( array( 'Oefenwedstrijd', 'KNHS-wedstrijd', 'Kampioenschap' ) as $name ) {
+		$t = get_term_by( 'name', $name, 'hsv_soort' );
+		if ( $t && '' === get_term_meta( $t->term_id, 'hsv_is_wedstrijd', true ) ) {
+			update_term_meta( $t->term_id, 'hsv_is_wedstrijd', '1' );
+		}
+	}
+	flush_rewrite_rules( false );
+	update_option( 'hsv_version', HSV_VERSION );
+}, 20 );
