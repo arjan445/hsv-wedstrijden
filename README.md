@@ -1,4 +1,4 @@
-# HSV Wedstrijden (plugin) – v1.3.0
+# HSV Wedstrijden (plugin) – v1.4.0
 
 Agenda (wedstrijden, trainingen, vergaderingen), bezetting van locaties, startlijsten en uitslagen voor HSV De Paardenvriend. Staat los van het thema: bij een themawissel blijft alle inhoud bewaard.
 
@@ -29,6 +29,10 @@ Een wedstrijd kan **meerdere** startlijsten en uitslagen hebben (bijv. "Zaterdag
 3. De wedstrijdpagina toont alles automatisch. Na de einddatum verhuist de wedstrijd naar het uitslagenarchief.
 
 Knoppen en status gaan vanzelf: *Inschrijving open* → *Inschrijving gesloten* (na sluitdatum) → *Nu bezig* + *Live uitslagen* (tijdens de wedstrijd) → *Uitslagen*.
+
+## Permalinks met datum
+
+Agenda-items krijgen automatisch de begindatum in hun adres: `/agenda/springclinic-2026-11-23/` (twee op dezelfde dag: `…-2`). Verandert de datum of titel, dan verhuist het adres mee en stuurt WordPress het oude adres door. Een zelf ingevulde slug die niet op de titel lijkt, blijft staan. Bij de update naar 1.4.0 krijgen bestaande items eenmalig zo'n adres.
 
 ## Agenda op de site
 
