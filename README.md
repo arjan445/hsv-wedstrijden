@@ -1,4 +1,4 @@
-# HSV Wedstrijden (plugin) – v1.1.0
+# HSV Wedstrijden (plugin) – v1.2.0
 
 Agenda (wedstrijden, trainingen, vergaderingen), bezetting van locaties, startlijsten en uitslagen voor HSV De Paardenvriend. Staat los van het thema: bij een themawissel blijft alle inhoud bewaard.
 
@@ -32,6 +32,7 @@ Knoppen en status gaan vanzelf: *Inschrijving open* → *Inschrijving gesloten* 
 
 ## Agenda op de site
 
+- Standaard de **maandweergave** (aan te passen met filter `hsv_default_view`: `maand`, `lijst` of `bezetting`). Activiteiten staan als blokjes met titel in de dagvakken, ook op mobiel. Tik op een dag om onder de kalender alleen de activiteiten van die dag te zien.
 - Lijst-, maand- en bezettingsweergave, filters: `/agenda/?weergave=maand&maand=2026-11&discipline=springen&soort=knhs-wedstrijd&locatie=grote-hal`
 - iCal-abonnement voor leden: `/agenda/?ical=1`, per wedstrijd: `<wedstrijd-url>?ical=1`
 - Schema.org `SportsEvent` op wedstrijdpagina's (Google)

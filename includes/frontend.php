@@ -71,6 +71,9 @@ add_filter( 'wp_sitemaps_taxonomies', function ( $taxonomies ) {
 
 add_action( 'wp_enqueue_scripts', function () {
 	wp_enqueue_style( 'hsv-wedstrijden', HSV_URL . 'assets/hsv.css', array(), HSV_VERSION );
+	if ( is_post_type_archive( 'hsv_wedstrijd' ) || is_tax( array( 'hsv_discipline', 'hsv_soort' ) ) ) {
+		wp_enqueue_script( 'hsv-agenda', HSV_URL . 'assets/agenda.js', array(), HSV_VERSION, array( 'strategy' => 'defer', 'in_footer' => true ) );
+	}
 } );
 
 /* Schema.org-gegevens voor Google op de wedstrijdpagina. */

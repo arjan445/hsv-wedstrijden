@@ -77,29 +77,47 @@
 	.hsv-row-actions .hsv-btn { flex: 1; }
 }
 
-/* Maand */
+/* Maand – activiteiten als blokjes in de dagvakken (ook op mobiel, zoals de LAT-app) */
 .hsv-month-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
 .hsv-month-nav h2 { margin: 0; font-size: 28px; }
-.hsv-grid-wrap { overflow-x: auto; }
-.hsv-grid { min-width: 720px; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-top: 1px solid var(--hsv-border); border-left: 1px solid var(--hsv-border); font-family: var(--hsv-font-ui); }
-.hsv-grid-head { padding: 9px; text-align: center; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #555; background: var(--hsv-soft); border-right: 1px solid var(--hsv-border); border-bottom: 1px solid var(--hsv-border); }
-.hsv-cell { min-height: 118px; padding: 8px; border-right: 1px solid var(--hsv-border); border-bottom: 1px solid var(--hsv-border); background: #fff; display: flex; flex-direction: column; gap: 5px; }
+.hsv-today-link { text-align: center; margin: -6px 0 12px; font-family: var(--hsv-font-ui); font-size: 14px; font-weight: 700; }
+.hsv-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-top: 1px solid var(--hsv-border); border-left: 1px solid var(--hsv-border); font-family: var(--hsv-font-ui); }
+.hsv-grid-head { padding: 9px 4px; text-align: center; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #555; background: var(--hsv-soft); border-right: 1px solid var(--hsv-border); border-bottom: 1px solid var(--hsv-border); }
+.hsv-cell { min-width: 0; min-height: 118px; padding: 6px; border-right: 1px solid var(--hsv-border); border-bottom: 1px solid var(--hsv-border); background: #fff; display: flex; flex-direction: column; gap: 4px; }
 .hsv-cell.is-empty { background: #fafafa; }
-.hsv-cell-day { align-self: flex-start; min-width: 26px; text-align: center; border-radius: 13px; padding: 2px 4px; font-size: 14px; font-weight: 700; }
+.hsv-cell.is-past { background: #fcfcfc; }
+.hsv-cell.is-selected { box-shadow: inset 0 0 0 2px var(--hsv-primary); }
+.hsv-cell-day { align-self: flex-start; min-width: 28px; height: 28px; padding: 0 4px; border: 0; border-radius: 14px; background: transparent; font: inherit; font-size: 14px; font-weight: 700; color: var(--hsv-text); cursor: pointer; }
+.hsv-cell-day:disabled { cursor: default; }
+.hsv-cell-day:not(:disabled):hover { background: var(--hsv-soft); }
 .hsv-cell.is-past .hsv-cell-day { color: #767676; }
 .hsv-cell.is-today .hsv-cell-day { background: var(--hsv-primary); color: #fff; }
-.hsv-cell-event { display: block; font-size: 13px; font-weight: 700; line-height: 1.3; padding: 6px 8px; border-radius: 6px; text-decoration: none !important; }
+.hsv-cell-event { display: block; min-width: 0; font-size: 13px; font-weight: 700; line-height: 1.3; padding: 5px 7px; border-radius: 6px; text-decoration: none !important; overflow: hidden; }
 .hsv-cell-event:hover { filter: brightness(.95); }
-.hsv-month-list { display: none; margin-top: 24px; }
+.hsv-cell-time { display: block; font-size: 11px; font-weight: 700; opacity: .85; }
+.hsv-cell-title { display: block; overflow: hidden; text-overflow: ellipsis; }
+.hsv-month-list { display: none; margin-top: 24px; scroll-margin-top: 110px; }
+.hsv-month-list.is-filtered { display: block; }
+.hsv-day-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 4px; }
+.hsv-day-head[hidden] { display: none; }
+.hsv-day-title { margin: 0; font-size: 22px; }
+.hsv-day-reset { border: 1px solid var(--hsv-primary); background: #fff; color: var(--hsv-primary); border-radius: var(--hsv-radius); min-height: 40px; padding: 0 14px; font: inherit; font-weight: 700; font-size: 14px; cursor: pointer; }
+.hsv-day-item[hidden] { display: none; }
 @media (max-width: 767px) {
-	.hsv-grid { min-width: 0; border: 0; gap: 4px; }
-	.hsv-grid-head { background: none; border: 0; padding: 4px 0; font-size: 12px; }
-	.hsv-cell { min-height: 40px; border: 0; padding: 0; border-radius: 8px; align-items: center; justify-content: center; position: relative; }
-	.hsv-cell.is-empty { background: none; }
-	.hsv-cell-day { align-self: center; }
-	.hsv-cell-event { position: absolute; inset: 0; font-size: 0; padding: 0; opacity: .9; }
-	.hsv-cell.has-events .hsv-cell-day { position: relative; z-index: 1; pointer-events: none; }
+	.hsv-month-nav h2 { font-size: 22px; }
+	.hsv-grid-head { padding: 6px 0; font-size: 11px; letter-spacing: .04em; }
+	.hsv-cell { min-height: 74px; padding: 2px; gap: 2px; }
+	.hsv-cell.has-events { cursor: pointer; }
+	.hsv-cell-day { align-self: center; min-width: 24px; height: 24px; font-size: 12px; }
+	.hsv-cell-event { font-size: 10px; line-height: 1.2; padding: 2px 3px; border-radius: 3px; }
+	.hsv-cell-time { display: none; }
+	.hsv-cell-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; white-space: normal; overflow-wrap: anywhere; hyphens: auto; }
 	.hsv-month-list { display: block; }
+	/* Filters op één veegbare rij */
+	.hsv-agenda .hsv-filters { flex-wrap: nowrap; overflow-x: auto; margin: 0 -12px; padding: 0 12px 4px; scrollbar-width: none; width: calc(100% + 24px); }
+	.hsv-agenda .hsv-filters::-webkit-scrollbar { display: none; }
+	.hsv-agenda .hsv-chip { flex: 0 0 auto; }
+	.hsv-agenda .hsv-filter-sep { flex: 0 0 1px; }
 }
 
 /* Wedstrijdpagina */

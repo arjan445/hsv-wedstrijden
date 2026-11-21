@@ -8,7 +8,7 @@
 get_header();
 $s      = hsv_agenda_state();
 $keep   = array(
-	'weergave' => 'lijst' === $s['view'] ? '' : $s['view'],
+	'weergave' => $s['view'],
 	'maand'    => 'maand' === $s['view'] ? $s['ym'] : '',
 );
 $filter = array( 'discipline' => $s['disc'], 'soort' => $s['soort'], 'locatie' => $s['locatie'] );
@@ -57,8 +57,8 @@ $toggle = function ( $key, $value ) use ( $keep, $filter ) {
 				<p class="hsv-lead">Wanneer zijn de hal, het buitenparcours en de kantine bezet?</p>
 			<?php endif; ?>
 			<div class="hsv-switch" role="group" aria-label="Weergave">
-				<a class="<?php echo 'lijst' === $s['view'] ? 'is-active' : ''; ?>" href="<?php echo hsv_agenda_url( $filter ); // phpcs:ignore ?>">Lijst</a>
 				<a class="<?php echo 'maand' === $s['view'] ? 'is-active' : ''; ?>" href="<?php echo hsv_agenda_url( array_merge( array( 'weergave' => 'maand' ), $filter ) ); // phpcs:ignore ?>">Maand</a>
+				<a class="<?php echo 'lijst' === $s['view'] ? 'is-active' : ''; ?>" href="<?php echo hsv_agenda_url( array_merge( array( 'weergave' => 'lijst' ), $filter ) ); // phpcs:ignore ?>">Lijst</a>
 				<?php if ( hsv_get_locaties() ) : ?>
 					<a class="<?php echo 'bezetting' === $s['view'] ? 'is-active' : ''; ?>" href="<?php echo hsv_agenda_url( array( 'weergave' => 'bezetting' ) ); // phpcs:ignore ?>">Bezetting</a>
 				<?php endif; ?>

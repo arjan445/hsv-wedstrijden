@@ -359,7 +359,8 @@ function hsv_list_item( $post ) {
  * Agenda-filters in de URL: ?weergave=maand&maand=2026-11&discipline=springen&soort=knhs-wedstrijd
  * ---------------------------------------------------------------- */
 function hsv_agenda_state() {
-	$view = ( isset( $_GET['weergave'] ) && in_array( $_GET['weergave'], array( 'maand', 'bezetting' ), true ) ) ? $_GET['weergave'] : 'lijst'; // phpcs:ignore WordPress.Security.NonceVerification
+	$default = apply_filters( 'hsv_default_view', 'maand' ); // maand, lijst of bezetting
+	$view    = ( isset( $_GET['weergave'] ) && in_array( $_GET['weergave'], array( 'lijst', 'maand', 'bezetting' ), true ) ) ? $_GET['weergave'] : $default; // phpcs:ignore WordPress.Security.NonceVerification
 	$loc  = isset( $_GET['locatie'] ) ? sanitize_title( wp_unslash( $_GET['locatie'] ) ) : ''; // phpcs:ignore
 	$week = ( isset( $_GET['week'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $_GET['week'] ) ) ? $_GET['week'] : current_time( 'Y-m-d' ); // phpcs:ignore
 	$week = gmdate( 'Y-m-d', strtotime( $week . ' 12:00:00 -' . ( (int) gmdate( 'N', strtotime( $week . ' 12:00:00' ) ) - 1 ) . ' days' ) ); // maandag
@@ -376,6 +377,10 @@ function hsv_agenda_state() {
 }
 
 function hsv_agenda_url( $args = array() ) {
+	// De standaardweergave hoeft niet in de URL.
+	if ( isset( $args['weergave'] ) && apply_filters( 'hsv_default_view', 'maand' ) === $args['weergave'] ) {
+		$args['weergave'] = '';
+	}
 	return esc_url( add_query_arg( array_filter( $args ), get_post_type_archive_link( 'hsv_wedstrijd' ) ) );
 }
 
