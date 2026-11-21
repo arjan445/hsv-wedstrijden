@@ -68,7 +68,7 @@ $toggle = function ( $key, $value ) use ( $keep, $filter ) {
 		<?php if ( 'bezetting' === $s['view'] ) : ?>
 			<?php hsv_template( 'parts/bezetting.php', $s ); ?>
 		<?php elseif ( 'maand' === $s['view'] ) : ?>
-			<?php hsv_template( 'parts/maand.php', $s ); ?>
+			<?php hsv_template( apply_filters( 'hsv_use_fullcalendar', true ) ? 'parts/kalender.php' : 'parts/maand.php', $s ); ?>
 		<?php else : ?>
 			<?php $hsv_items = hsv_get_wedstrijden( $filter ); ?>
 			<?php if ( $hsv_items ) : ?>

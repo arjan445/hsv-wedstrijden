@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       HSV Wedstrijden
  * Description:       Agenda (wedstrijden, trainingen, vergaderingen), bezetting van locaties, startlijsten en uitslagen voor HSV De Paardenvriend.
- * Version:           1.2.0
+ * Version:           1.3.0
  * Requires at least: 6.4
  * Requires PHP:      7.4
  * Author:            Bongersonline
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'HSV_VERSION', '1.2.0' );
+define( 'HSV_VERSION', '1.3.0' );
 define( 'HSV_FILE', __FILE__ );
 define( 'HSV_DIR', plugin_dir_path( __FILE__ ) );
 define( 'HSV_URL', plugin_dir_url( __FILE__ ) );
@@ -25,6 +25,7 @@ require_once HSV_DIR . 'includes/helpers.php';
 require_once HSV_DIR . 'includes/admin.php';
 require_once HSV_DIR . 'includes/frontend.php';
 require_once HSV_DIR . 'includes/ical.php';
+require_once HSV_DIR . 'includes/rest.php';
 
 register_activation_hook( __FILE__, function () {
 	hsv_register_types();

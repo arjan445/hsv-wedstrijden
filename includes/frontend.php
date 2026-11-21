@@ -71,8 +71,10 @@ add_filter( 'wp_sitemaps_taxonomies', function ( $taxonomies ) {
 
 add_action( 'wp_enqueue_scripts', function () {
 	wp_enqueue_style( 'hsv-wedstrijden', HSV_URL . 'assets/hsv.css', array(), HSV_VERSION );
-	if ( is_post_type_archive( 'hsv_wedstrijd' ) || is_tax( array( 'hsv_discipline', 'hsv_soort' ) ) ) {
-		wp_enqueue_script( 'hsv-agenda', HSV_URL . 'assets/agenda.js', array(), HSV_VERSION, array( 'strategy' => 'defer', 'in_footer' => true ) );
+	if ( ( is_post_type_archive( 'hsv_wedstrijd' ) || is_tax( array( 'hsv_discipline', 'hsv_soort' ) ) ) && 'maand' === hsv_agenda_state()['view'] && apply_filters( 'hsv_use_fullcalendar', true ) ) {
+		wp_enqueue_script( 'fullcalendar', HSV_URL . 'assets/vendor/fullcalendar/index.global.min.js', array(), '6.1.22', true );
+		wp_enqueue_script( 'fullcalendar-nl', HSV_URL . 'assets/vendor/fullcalendar/locale-nl.global.min.js', array( 'fullcalendar' ), '6.1.22', true );
+		wp_enqueue_script( 'hsv-kalender', HSV_URL . 'assets/kalender.js', array( 'fullcalendar', 'fullcalendar-nl' ), HSV_VERSION, true );
 	}
 } );
 
